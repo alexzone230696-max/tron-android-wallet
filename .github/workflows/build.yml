@@ -1,0 +1,43 @@
+name: Build TRON Wallet APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Устанавливаем JDK 17 (требуется для современных Gradle)
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 3. Кэшируем зависимости Gradle
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper/
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      # 4. Собираем APK (Release)
+      - name: Build APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      # 5. Загружаем APK как артефакт
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tron-wallet-apk
+          path: app/build/outputs/apk/release/app-release.apk
